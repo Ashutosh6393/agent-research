@@ -1,6 +1,6 @@
 from src.utils.states import GenerateAnalystsState, InterviewState, ResearchGraphState
 from src.utils.objects import Perspectives, Analyst
-from src.utils.models import llm
+from src.utils.model import llm
 from langchain.messages import SystemMessage, HumanMessage
 from src.utils.prompts import analyst_instructions, question_instructions, answer_instructions, section_writer_instructions, report_writer_instructions, intro_conclusion_instructions
 from dotenv import load_dotenv
@@ -63,9 +63,8 @@ def human_feedback(state: GenerateAnalystsState):
     return {"human_analyst_feedback": None}
 
 def human_feedback_update(state: GenerateAnalystsState):
-    """this will update the human feedback state"""
-    human_feedback = GenerateAnalystsState["human_analyst_feedback"]
-    return {"human_analyst_feedback" : human_feedback}
+    """Read human feedback from the current state."""
+    return {"human_analyst_feedback": state.get("human_analyst_feedback")}
 
 def dummy(state: GenerateAnalystsState):
     """ No-op node that should be interrupted on """
@@ -138,18 +137,6 @@ def generate_answer(state: InterviewState):
     # Append it to state
     return {"messages": [answer]}
 
-def save_interview(state: InterviewState):
-    """ Save interviews """
-
-    # Get messages
-    messages = state["messages"]
-    
-    # Convert interview to a string
-    interview = get_buffer_string(messages)
-    
-    # Save to interviews key
-    return {"interview": interview}
-
 tavily_search = TavilySearch(max_results=3)
 
 search_instructions_system_message = SystemMessage(content=search_instructions)
@@ -160,7 +147,7 @@ def search_web(state: InterviewState):
 
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
+    search_query = structured_llm.invoke([search_instructions_system_message] + state['messages'])
     
     # Search
     #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0
@@ -184,7 +171,7 @@ def search_web2(state: InterviewState):
 
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions]+state['messages'])
+    search_query = structured_llm.invoke([search_instructions_system_message] + state['messages'])
     
     # Search
     #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0
@@ -226,7 +213,7 @@ def write_introduction(state: ResearchGraphState):
     # Summarize the sections into a final report
     
     instructions = intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections)    
-    intro = llm.invoke([instructions]+[HumanMessage(content=f"Write the report introduction")]) 
+    intro = llm.invoke([SystemMessage(content=instructions)]+[HumanMessage(content="Write the report introduction")]) 
     return {"introduction": intro.content}
 
 def write_conclusion(state: ResearchGraphState):
@@ -241,7 +228,7 @@ def write_conclusion(state: ResearchGraphState):
     # Summarize the sections into a final report
     
     instructions = intro_conclusion_instructions.format(topic=topic, formatted_str_sections=formatted_str_sections)    
-    conclusion = llm.invoke([instructions]+[HumanMessage(content=f"Write the report conclusion")]) 
+    conclusion = llm.invoke([SystemMessage(content=instructions)]+[HumanMessage(content="Write the report conclusion")]) 
     return {"conclusion": conclusion.content}
 
 def finalize_report(state: ResearchGraphState):
@@ -249,11 +236,11 @@ def finalize_report(state: ResearchGraphState):
     # Save full final report
     content = state["content"]
     if content.startswith("## Insights"):
-        content = content.strip("## Insights")
+        content = content.removeprefix("## Insights").lstrip()
     if "## Sources" in content:
         try:
             content, sources = content.split("\n## Sources\n")
-        except:
+        except ValueError:
             sources = None
     else:
         sources = None
