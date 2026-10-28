@@ -1,10 +1,18 @@
-from src.utils.states import InterviewState
-from src.utils.nodes import generate_question, search_web, search_web2, generate_answer, save_interview, write_section
+from langgraph.graph import END, START
+
 from src.utils.edges import route_messages
-from langgraph.graph import StateGraph, START, END
+from src.utils.nodes import (
+    generate_answer,
+    generate_question,
+    save_interview,
+    search_web,
+    search_web2,
+    write_section,
+)
+from src.utils.states import InterviewState, state_graph
 
 # Add nodes and edges 
-interview_builder = StateGraph(InterviewState)
+interview_builder = state_graph(InterviewState)
 interview_builder.add_node("ask_question", generate_question)
 interview_builder.add_node("search_web", search_web)
 interview_builder.add_node("search_web2", search_web2)

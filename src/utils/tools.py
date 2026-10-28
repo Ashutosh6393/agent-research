@@ -1,9 +1,10 @@
 # creating Web search tool
-from langchain_tavily import TavilySearch
-from src.utils.prompts import search_instructions
 from langchain.messages import SystemMessage
-from src.utils.states import InterviewState, SearchQuery
+from langchain_tavily import TavilySearch
+
 from src.utils.model import llm
+from src.utils.prompts import search_instructions
+from src.utils.states import InterviewState, SearchQuery, parse_model
 
 tavily_search = TavilySearch(max_results=3)
 
@@ -15,7 +16,10 @@ def search_web(state: InterviewState):
 
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions_system_message] + state['messages'])
+    search_query = parse_model(
+        SearchQuery,
+        structured_llm.invoke([search_instructions_system_message] + state['messages']),
+    )
     
     # Search
     #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0
@@ -38,7 +42,10 @@ def search_web2(state: InterviewState):
 
     # Search query
     structured_llm = llm.with_structured_output(SearchQuery)
-    search_query = structured_llm.invoke([search_instructions_system_message] + state['messages'])
+    search_query = parse_model(
+        SearchQuery,
+        structured_llm.invoke([search_instructions_system_message] + state['messages']),
+    )
     
     # Search
     #search_docs = tavily_search.invoke(search_query.search_query) # updated 1.0

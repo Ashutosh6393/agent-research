@@ -1,4 +1,4 @@
-analyst_instructions="""
+analyst_instructions = """
 You are tasked with creating a set of AI analyst personas. Follow these instructions carefully:
 1. First, review the research topic:
 {topic}
