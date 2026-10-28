@@ -20,7 +20,7 @@ class InterviewState(MessagesState):
     sections: list # Final key we duplicate in outer state for Send() API
 
 class SearchQuery(BaseModel):
-    search_query: str = Field(None, description="Search query for retrieval.")
+    search_query: str = Field(description="Search query for retrieval.")
 
 class ResearchGraphState(TypedDict):
     topic: str # Research topic
